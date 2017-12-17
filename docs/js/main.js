@@ -8,20 +8,16 @@ var prices = null;
 
 window.onload = function(){
 
-	var counter = 0;
-	while (localStorage.getItem("name"+counter) != null) {
-	  trackers.push({
-			name:localStorage.getItem("name"+counter),
-			symbol:localStorage.getItem("symbol"+counter),
-			init_usd_value:localStorage.getItem("init_usd_value"+counter),
-			amount:localStorage.getItem("amount"+counter)
-		});
-	  counter++;
+	if (localStorage.getItem("trackers") != null)
+	{
+		trackers = JSON.parse(localStorage.getItem("trackers"))
+		console.log("trackers: "+trackers.length);
 	}
 
 	refresh();
 	initGraph();
 	initGraph2();
+	getPrices();
 }
 
 function refresh()
@@ -41,7 +37,7 @@ function refresh()
 	}
 }
 
-setInterval(loop, 15000);
+setInterval(loop, 30000);
 function loop()
 {
 	console.log("updating prices...");
@@ -71,10 +67,16 @@ function updateNavList()
 		}
 
 		var tracker = trackers[i];
+		var infos = getCurrencyInfos(tracker.symbol);
+
 		content+='<li class="nav-item" style="'+style+'" data-toggle="tooltip" data-placement="right" title="Charts">'
         content+='<a class="nav-link" onClick="selectTracker('+i+')">'
         content+='<i class="'+icon+'"></i>'
-        content+='<span class="nav-link-text"> '+tracker.name+' '+d+e+'</span>'
+        if(infos)
+        	content+='<span class="nav-link-text"> '+tracker.name+' '+Math.round(tracker.amount*infos.price_usd*10)/10+'$'+d+e+'</span>'
+       	else
+        	content+='<span class="nav-link-text"> '+tracker.name+' '+d+e+'</span>'
+
         content+='</a>';
         content+='</li>';
 
@@ -108,6 +110,8 @@ function updateNavList()
 
 function selectTracker(id)
 {
+	tickerValues = []
+	tickerLabels = []
 
 	selectedTracker = id;
 
@@ -128,10 +132,7 @@ function selectTracker(id)
 function deleteIndex(i)
 {
 	trackers.splice(i, 1);
-	localStorage.removeItem("name"+i);
-	localStorage.removeItem("symbol"+i);
-	localStorage.removeItem("init_usd_value"+i);
-	localStorage.removeItem("amount"+i);
+	localStorage.setItem("trackers", JSON.stringify(trackers))
 	refresh();
 }
 
@@ -252,10 +253,7 @@ function addTracker()
 
 			var id = trackers.length-1;
 
-			localStorage.setItem("name"+id, infos.name);
-			localStorage.setItem("symbol"+id, infos.symbol);
-			localStorage.setItem("init_usd_value"+id, amount*infos.price_usd);
-			localStorage.setItem("amount"+id, amount);
+			localStorage.setItem("trackers", JSON.stringify(trackers));
 
 			$("#addModal").modal("hide")
 			selectTracker(trackers.length-1);
@@ -284,8 +282,9 @@ function saveTracker()
 	init_value = parseFloat(document.getElementById("editinitamountfield").value);
 	trackers[editingIndex].amount = amount;
 	trackers[editingIndex].init_usd_value = init_value;
-	localStorage.setItem("init_usd_value"+editingIndex, init_value);
-	localStorage.setItem("amount"+editingIndex, amount);
+	
+	localStorage.setItem("trackers", JSON.stringify(trackers))
+
 	selectTracker(editingIndex);
 	$("#editModal").modal("hide")
 }
@@ -410,7 +409,7 @@ function updateGraph()
 }
 
 function getHistorical() {
-	var xmlHttp = new XMLHttpRequest();
+	/*var xmlHttp = new XMLHttpRequest();
 	var infos = getCurrencyInfos(trackers[selectedTracker].symbol);
 
 	if (infos)
@@ -429,30 +428,29 @@ function getHistorical() {
 
 	    xmlHttp.open("GET", "https://www.binance.com/api/v1/klines?symbol="+infos.symbol+"BTC&interval=1m", true); // true for asynchronous 
 	    xmlHttp.send(null);
-	}
-   
+	}*/
+   updateTickerGraph()
 }
 
-function updateTickerGraph(ticks)
+var tickerValues = []
+var tickerLabels = []
+
+function updateTickerGraph()
 {
-	var tickerValues = []
-	var tickerLabels = []
-	for (var i in ticks)
-	{
-		var candle = ticks[i];
-		tickerLabels.push(candle[0])
-		tickerValues.push(candle[1]) 
-	}
+	var tracker = trackers[selectedTracker];
+	var infos = getCurrencyInfos(tracker.symbol);
+
+	tickerLabels.push((new Date()).getTime());
+	tickerValues.push(infos.price_usd); 
 
 	var data = {
-	        labels: tickerValues,
+	        labels: tickerLabels,
 	        datasets: [{
-	            label: 'Value per unit (BTC)',
-	            data: tickerLabels,
+	            label: 'Value per unit ($)',
+	            data: tickerValues,
 	            borderWidth: 1
 	        }]
 	    };
 	myChart2.data = data;
-	myChart2.update();
-	
+	myChart2.update(0);	
 }
