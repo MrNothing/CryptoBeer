@@ -37,7 +37,7 @@ function refresh()
 	}
 }
 
-setInterval(loop, 30000);
+setInterval(loop, 60*1000*2);
 function loop()
 {
 	console.log("updating prices...");
@@ -174,7 +174,7 @@ function updatePage(id)
 	{
 		infos = getCurrencyInfos(tracker.symbol);
 
-		document.getElementById("amountinfo").innerHTML = "Amount: "+tracker.amount+" "+tracker.symbol+"<br/> rate: "+infos.price_usd+" $";	
+		document.getElementById("amountinfo").innerHTML = "Amount: "+tracker.amount+" "+tracker.symbol+"<br/> rate: "+infos.price_usd+" $"+"  "+infos.price_btc+" btc";	
 		document.getElementById("amountinfo").style.color = "";
 
 		var percent = Math.round(((tracker.amount*infos.price_usd)/tracker.init_usd_value)*100)-100;
@@ -209,6 +209,7 @@ function getPrices() {
 			{
 				updateTotalPage();
 			}
+			updateNavList();
         }
     }
     xmlHttp.open("GET", "https://api.coinmarketcap.com/v1/ticker/", true); // true for asynchronous 
@@ -335,13 +336,7 @@ function initGraph2()
 	        }]
 	    },
 	    options: {
-	        scales: {
-	            yAxes: [{
-	                ticks: {
-	                    beginAtZero:true
-	                }
-	            }]
-	        }
+	       
 	    }
 	});
 }
@@ -409,7 +404,7 @@ function updateGraph()
 }
 
 function getHistorical() {
-	/*var xmlHttp = new XMLHttpRequest();
+	var xmlHttp = new XMLHttpRequest();
 	var infos = getCurrencyInfos(trackers[selectedTracker].symbol);
 
 	if (infos)
@@ -426,22 +421,35 @@ function getHistorical() {
 	    var endDate = (new Date()).getTime();
 	    var startDate = (new Date()).getTime()-60*60*24;
 
-	    xmlHttp.open("GET", "https://www.binance.com/api/v1/klines?symbol="+infos.symbol+"BTC&interval=1m", true); // true for asynchronous 
+	    //xmlHttp.open("GET", "https://www.binance.com/api/v1/klines?symbol="+infos.symbol+"BTC&interval=1m", true); // true for asynchronous 
+	    xmlHttp.open("GET", "https://api.kraken.com/0/public/Trades?pair=XBTEUR", true); // true for asynchronous 
 	    xmlHttp.send(null);
-	}*/
-   updateTickerGraph()
+	}
+
+   	updateTickerGraph()
 }
 
-var tickerValues = []
-var tickerLabels = []
+var ticker_map = {}
 
 function updateTickerGraph()
-{
-	var tracker = trackers[selectedTracker];
-	var infos = getCurrencyInfos(tracker.symbol);
+{	
+	for (var i in trackers)
+	{
+		if(!ticker_map[i])
+		ticker_map[i] = {values:[], labels:[]};
 
-	tickerLabels.push((new Date()).getTime());
-	tickerValues.push(infos.price_usd); 
+		var tickerValues = ticker_map[i].values;
+		var tickerLabels = ticker_map[i].labels;
+
+		var tracker = trackers[i];
+		var infos = getCurrencyInfos(tracker.symbol);
+
+		tickerLabels.push((new Date()).getTime());
+		tickerValues.push(infos.price_usd); 
+	}
+
+	var tickerValues = ticker_map[selectedTracker].values;
+	var tickerLabels = ticker_map[selectedTracker].labels;
 
 	var data = {
 	        labels: tickerLabels,
