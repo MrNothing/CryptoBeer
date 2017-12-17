@@ -192,7 +192,7 @@ function getPrices() {
         if (xmlHttp.readyState == 4 && xmlHttp.status == 200)
         {
             prices = JSON.parse(xmlHttp.responseText);
-        	if (id>=0)
+        	if (selectedTracker>=0)
 			{
 				getPrices();
 				updatePage(selectedTracker);
