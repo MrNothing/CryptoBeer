@@ -171,7 +171,7 @@ function updatePage(id)
 
 		var percent = Math.round(((tracker.amount*infos.price_usd)/tracker.init_usd_value)*100)-100;
 		var gain = Math.round((tracker.amount*infos.price_usd-tracker.init_usd_value)*100)/100;
-		if (percent>=0)
+		if (gain>=0)
 		{
 			document.getElementById("gaininfo").innerHTML = "+"+gain+" $ (+"+percent+"%)";	
 			document.getElementById("gaininfo").style.color = "#00DD00"
