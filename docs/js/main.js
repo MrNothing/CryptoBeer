@@ -192,7 +192,15 @@ function getPrices() {
         if (xmlHttp.readyState == 4 && xmlHttp.status == 200)
         {
             prices = JSON.parse(xmlHttp.responseText);
-        	selectTracker(selectedTracker)
+        	if (id>=0)
+			{
+				getPrices();
+				updatePage(selectedTracker);
+			}
+			else
+			{
+				updateTotalPage();
+			}
         }
     }
     xmlHttp.open("GET", "https://api.coinmarketcap.com/v1/ticker/", true); // true for asynchronous 
