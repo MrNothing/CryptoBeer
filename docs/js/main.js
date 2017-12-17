@@ -7,6 +7,7 @@ var selectedTracker = 0;
 var prices = null;
 
 window.onload = function(){
+
 	var counter = 0;
 	while (localStorage.getItem("name"+counter) != null) {
 	  trackers.push({
@@ -20,6 +21,7 @@ window.onload = function(){
 
 	refresh();
 	initGraph();
+	initGraph2();
 }
 
 function refresh()
@@ -135,26 +137,29 @@ function deleteIndex(i)
 
 function updateTotalPage()
 {
-	document.getElementById("gaininfo").innerHTML = "";
+	document.getElementById("amountinfo").innerHTML = '<i class="fa fa-binoculars"></i>Total: ';
+	document.getElementById("amountinfo").style.color = "";
 	var gains = getTotalGains();
+	gains = Math.round(gains*1000)/1000;
 	if (gains>0)
 	{
 
-		document.getElementById("amountinfo").innerHTML = '<i class="fa fa-binoculars"></i> Total: +'+gains+"$";
-		document.getElementById("amountinfo").style.color = "00DD00";
+		document.getElementById("gaininfo").innerHTML = '+'+gains+"$";
+		document.getElementById("gaininfo").style.color = "#00DD00";
 	}
 	else
 	{
-		document.getElementById("amountinfo").innerHTML = '<i class="fa fa-binoculars"></i> Total: '+gains+"$";
-		document.getElementById("amountinfo").style.color = "DD0000";
+		document.getElementById("gaininfo").innerHTML = gains+"$";
+		document.getElementById("gaininfo").style.color = "#DD0000";
 	}
-	updateGraph();		
 	document.getElementById("myChart").style.display = "block";
 	document.getElementById("myChart2").style.display = "none";
+	updateGraph();		
 }
 
 function updatePage(id)
 {		
+
 	document.getElementById("myChart").style.display = "none";
 	document.getElementById("myChart2").style.display = "block";
 
@@ -197,6 +202,7 @@ function getPrices() {
         	if (selectedTracker>=0)
 			{
 				updatePage(selectedTracker);
+				getHistorical();
 			}
 			else
 			{
@@ -295,7 +301,7 @@ function initGraph()
 	    data: {
 	        labels: [],
 	        datasets: [{
-	            label: '# of Votes',
+	            label: 'Gains',
 	            data: [],
 	           
 	            borderWidth: 1
@@ -318,12 +324,12 @@ function initGraph2()
 {
 	var ctx = document.getElementById("myChart2");
 	document.getElementById("myChart2").style.display = "none";
-	myChart = new Chart(ctx, {
+	myChart2 = new Chart(ctx, {
 	    type: 'line',
 	    data: {
 	        labels: [],
 	        datasets: [{
-	            label: '# of Votes',
+	            label: 'Unit price (BTC)',
 	            data: [],
 	           
 	            borderWidth: 1
@@ -399,22 +405,32 @@ function updateGraph()
 	        }]
 	    };
 	myChart.data = data;
-	
+	myChart.update();
+	console.log("Updating total graph sum: "+sum)
 }
 
 function getHistorical() {
 	var xmlHttp = new XMLHttpRequest();
 	var infos = getCurrencyInfos(trackers[selectedTracker].symbol);
-    xmlHttp.onreadystatechange = function() { 
-        if (xmlHttp.readyState == 4 && xmlHttp.status == 200)
-        {
-            var ticks = JSON.parse(xmlHttp.responseText);
 
-        	updateTickerGraph(ticks)
-        }
-    }
-    xmlHttp.open("GET", "https://graphs.coinmarketcap.com/currencies/"+infos.id+"/"+startDate+"/"+endDate+"/", true); // true for asynchronous 
-    xmlHttp.send(null);
+	if (infos)
+	{
+		 xmlHttp.onreadystatechange = function() { 
+	        if (xmlHttp.readyState == 4 && xmlHttp.status == 200)
+	        {
+	            var ticks = JSON.parse(xmlHttp.responseText);
+
+	        	updateTickerGraph(ticks)
+	        }
+	    }
+
+	    var endDate = (new Date()).getTime();
+	    var startDate = (new Date()).getTime()-60*60*24;
+
+	    xmlHttp.open("GET", "https://www.binance.com/api/v1/klines?symbol="+infos.symbol+"BTC&interval=1m", true); // true for asynchronous 
+	    xmlHttp.send(null);
+	}
+   
 }
 
 function updateTickerGraph(ticks)
@@ -429,13 +445,14 @@ function updateTickerGraph(ticks)
 	}
 
 	var data = {
-	        labels: labels,
+	        labels: tickerValues,
 	        datasets: [{
-	            label: 'Market cap in $',
-	            data: values,
+	            label: 'Value per unit (BTC)',
+	            data: tickerLabels,
 	            borderWidth: 1
 	        }]
 	    };
 	myChart2.data = data;
+	myChart2.update();
 	
 }
