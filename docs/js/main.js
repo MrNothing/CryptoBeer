@@ -39,6 +39,13 @@ function refresh()
 	}
 }
 
+setInterval(loop, 15000);
+function loop()
+{
+	console.log("updating prices...");
+	getPrices();
+}
+
 $( function() {
 	$( "#datepicker" ).datepicker({uiLibrary: 'bootstrap4'});
 } );
@@ -51,20 +58,22 @@ function updateNavList()
 		var style = "";
 		var icon = "fa fa-circle-o";
 		var d = "";
+		var e = "";
 
 		if (selectedTracker==i)
 		{
 			style = "background-color:white";
 			icon = "fa fa-dot-circle-o";
-			d = '<a onClick="deleteIndex('+i+')" style="position: absolute; top: 21px; right: 13px;"><i class="fa fa-trash-o"></i></a>';
+			d = '<i onClick="deleteIndex('+i+')" class="fa fa-trash-o"></i> ';
+			e = '<i onClick="editIndex('+i+')" class="fa fa-cog"></i> ';
 		}
 
 		var tracker = trackers[i];
 		content+='<li class="nav-item" style="'+style+'" data-toggle="tooltip" data-placement="right" title="Charts">'
         content+='<a class="nav-link" onClick="selectTracker('+i+')">'
         content+='<i class="'+icon+'"></i>'
-        content+='<span class="nav-link-text"> '+tracker.name+'</span>'
-        content+='</a>'+d;
+        content+='<span class="nav-link-text"> '+tracker.name+' '+d+e+'</span>'
+        content+='</a>';
         content+='</li>';
 
 	}
@@ -127,7 +136,18 @@ function deleteIndex(i)
 function updateTotalPage()
 {
 	document.getElementById("gaininfo").innerHTML = "";
-	document.getElementById("amountinfo").innerHTML = '<i class="fa fa-binoculars"></i> Total';
+	var gains = getTotalGains();
+	if (gains>0)
+	{
+
+		document.getElementById("amountinfo").innerHTML = '<i class="fa fa-binoculars"></i> Total: +'+gains+"$";
+		document.getElementById("amountinfo").style.color = "00DD00";
+	}
+	else
+	{
+		document.getElementById("amountinfo").innerHTML = '<i class="fa fa-binoculars"></i> Total: '+gains+"$";
+		document.getElementById("amountinfo").style.color = "DD0000";
+	}
 	updateGraph();		
 	document.getElementById("myChart").style.display = "block";
 }
@@ -147,16 +167,18 @@ function updatePage(id)
 		infos = getCurrencyInfos(tracker.symbol);
 
 		document.getElementById("amountinfo").innerHTML = "Amount: "+tracker.amount+" "+tracker.symbol+"<br/> rate: "+infos.price_usd+" $";	
+		document.getElementById("amountinfo").style.color = "";
 
 		var percent = Math.round(((tracker.amount*infos.price_usd)/tracker.init_usd_value)*100)-100;
+		var gain = Math.round((tracker.amount*infos.price_usd-tracker.init_usd_value)*100)/100;
 		if (percent>=0)
 		{
-			document.getElementById("gaininfo").innerHTML = ""+tracker.amount*infos.price_usd+" $ (+"+percent+"%)";	
+			document.getElementById("gaininfo").innerHTML = "+"+gain+" $ (+"+percent+"%)";	
 			document.getElementById("gaininfo").style.color = "#00DD00"
 		}
 		else
 		{			
-			document.getElementById("gaininfo").innerHTML = ""+tracker.amount*infos.price_usd+" $ ("+percent+"%)";
+			document.getElementById("gaininfo").innerHTML = ""+gain+" $ ("+percent+"%)";
 			document.getElementById("gaininfo").style.color = "#FF0000"
 
 		}	
@@ -231,6 +253,28 @@ function addTracker()
 	}
 }
 
+var editingIndex;
+function editIndex(id)
+{
+	editingIndex = id;
+	$("#editModal").modal("show");
+	document.getElementById("editcurrency").value = trackers[editingIndex].symbol;
+	document.getElementById("editamountfield").value = trackers[editingIndex].amount;
+	document.getElementById("editinitamountfield").value = trackers[editingIndex].init_usd_value;
+}
+
+function saveTracker()
+{
+	amount = parseFloat(document.getElementById("editamountfield").value);
+	init_value = parseFloat(document.getElementById("editinitamountfield").value);
+	trackers[editingIndex].amount = amount;
+	trackers[editingIndex].init_usd_value = init_value;
+	localStorage.setItem("init_usd_value"+editingIndex, init_value);
+	localStorage.setItem("amount"+editingIndex, amount);
+	selectTracker(editingIndex);
+	$("#editModal").modal("hide")
+}
+
 var myChart;
 
 function initGraph()
@@ -260,6 +304,20 @@ function initGraph()
 	});
 }
 
+function getTotalGains()
+{
+	var sum = 0;
+	for (var i in trackers)
+	{
+		var tracker = trackers[i];
+		var infos = getCurrencyInfos(tracker.symbol);
+		var gain = tracker.amount*infos.price_usd-tracker.init_usd_value;
+		sum+=gain;
+	}
+
+	return sum;
+}
+
 function updateGraph()
 {
 	var labels = [];
@@ -270,9 +328,10 @@ function updateGraph()
 	{
 		var tracker = trackers[i];
 		var infos = getCurrencyInfos(tracker.symbol);
+		var gain = tracker.amount*infos.price_usd-tracker.init_usd_value;
 		labels.push(tracker.name)
-		values.push(tracker.amount*infos.price_usd) 
-		sum+=tracker.amount*infos.price_usd;
+		values.push(gain) 
+		sum+=gain;
 	}
 
 	labels.push("Total")
