@@ -73,7 +73,7 @@ function updateNavList()
         content+='<a class="nav-link" onClick="selectTracker('+i+')">'
         content+='<i class="'+icon+'"></i>'
         if(infos)
-        	content+='<span class="nav-link-text"> '+tracker.name+' '+Math.round(tracker.amount*infos.price_usd*10)/10+'$'+d+e+'</span>'
+        	content+='<span class="nav-link-text"> '+tracker.name+' '+Math.round(tracker.amount*infos.price_usd*10)/10+'$ '+d+e+'</span>'
        	else
         	content+='<span class="nav-link-text"> '+tracker.name+' '+d+e+'</span>'
 
