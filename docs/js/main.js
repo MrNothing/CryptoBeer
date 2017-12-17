@@ -25,11 +25,11 @@ window.onload = function(){
 function refresh()
 {
 	updateNavList();
-	selectTracker(selectedTracker)
 	if(trackers.length>0)
 	{
 		console.log("Showing trackers!")
 		getPrices();
+		selectTracker(selectedTracker)
 		document.getElementById("welcome").style.display = "none";
 	}
 	else
@@ -150,11 +150,13 @@ function updateTotalPage()
 	}
 	updateGraph();		
 	document.getElementById("myChart").style.display = "block";
+	document.getElementById("myChart2").style.display = "none";
 }
 
 function updatePage(id)
 {		
 	document.getElementById("myChart").style.display = "none";
+	document.getElementById("myChart2").style.display = "block";
 
 	var tracker = trackers[id];
 
@@ -194,7 +196,6 @@ function getPrices() {
             prices = JSON.parse(xmlHttp.responseText);
         	if (selectedTracker>=0)
 			{
-				getPrices();
 				updatePage(selectedTracker);
 			}
 			else
@@ -312,6 +313,34 @@ function initGraph()
 	});
 }
 
+var myChart2;
+function initGraph2()
+{
+	var ctx = document.getElementById("myChart2");
+	document.getElementById("myChart2").style.display = "none";
+	myChart = new Chart(ctx, {
+	    type: 'line',
+	    data: {
+	        labels: [],
+	        datasets: [{
+	            label: '# of Votes',
+	            data: [],
+	           
+	            borderWidth: 1
+	        }]
+	    },
+	    options: {
+	        scales: {
+	            yAxes: [{
+	                ticks: {
+	                    beginAtZero:true
+	                }
+	            }]
+	        }
+	    }
+	});
+}
+
 function getTotalGains()
 {
 	var sum = 0;
@@ -373,63 +402,40 @@ function updateGraph()
 	
 }
 
-tickerValues = []
-tickerLabels = []
-
-function getTick() {
+function getHistorical() {
 	var xmlHttp = new XMLHttpRequest();
 	var infos = getCurrencyInfos(trackers[selectedTracker].symbol);
     xmlHttp.onreadystatechange = function() { 
         if (xmlHttp.readyState == 4 && xmlHttp.status == 200)
         {
-            var tick = JSON.parse(xmlHttp.responseText);
+            var ticks = JSON.parse(xmlHttp.responseText);
 
-        	updateTickerGraph()
+        	updateTickerGraph(ticks)
         }
     }
-    xmlHttp.open("GET", "https://api.coinmarketcap.com/v1/ticker/"+infos.id, true); // true for asynchronous 
+    xmlHttp.open("GET", "https://graphs.coinmarketcap.com/currencies/"+infos.id+"/"+startDate+"/"+endDate+"/", true); // true for asynchronous 
     xmlHttp.send(null);
 }
 
-function updateTickerGraph()
+function updateTickerGraph(ticks)
 {
-	var sum = 0;
-	for (var i in trackers)
+	var tickerValues = []
+	var tickerLabels = []
+	for (var i in ticks)
 	{
-		var tracker = trackers[i];
-		var infos = getCurrencyInfos(tracker.symbol);
-		labels.push(tracker.name)
-		values.push(tracker.amount*infos.price_usd) 
-		sum+=tracker.amount*infos.price_usd;
+		var candle = ticks[i];
+		tickerLabels.push(candle[0])
+		tickerValues.push(candle[1]) 
 	}
-
-	labels.push("Total")
-	values.push(sum) //todo, get real price in $
 
 	var data = {
 	        labels: labels,
 	        datasets: [{
-	            label: 'Value in $',
+	            label: 'Market cap in $',
 	            data: values,
-	            backgroundColor: [
-	                'rgba(255, 99, 132, 0.2)',
-	                'rgba(54, 162, 235, 0.2)',
-	                'rgba(255, 206, 86, 0.2)',
-	                'rgba(75, 192, 192, 0.2)',
-	                'rgba(153, 102, 255, 0.2)',
-	                'rgba(255, 159, 64, 0.2)'
-	            ],
-	            borderColor: [
-	                'rgba(255,99,132,1)',
-	                'rgba(54, 162, 235, 1)',
-	                'rgba(255, 206, 86, 1)',
-	                'rgba(75, 192, 192, 1)',
-	                'rgba(153, 102, 255, 1)',
-	                'rgba(255, 159, 64, 1)'
-	            ],
 	            borderWidth: 1
 	        }]
 	    };
-	myChart.data = data;
+	myChart2.data = data;
 	
 }
