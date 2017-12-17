@@ -116,7 +116,11 @@ function selectTracker(id)
 
 function deleteIndex(i)
 {
-	trackers = trackers.splice(i, 1);
+	trackers.splice(i, 1);
+	localStorage.removeItem("name"+i);
+	localStorage.removeItem("symbol"+i);
+	localStorage.removeItem("init_usd_value"+i);
+	localStorage.removeItem("amount"+i);
 	refresh();
 }
 
